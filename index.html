@@ -1,0 +1,156 @@
+<!doctype html>
+<html class="no-js" lang="">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Tip Calculator</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="css/bootstrap.min.css"/>
+    <!--<link rel="stylesheet" href="css/bootstrap-theme.min.css"/>-->
+    <link rel="stylesheet" href="libs/select2-4.0.3/dist/css/select2.min.css"/>
+    <link rel="stylesheet" href="css/main.css"/>
+
+    <!--[if lt IE 9]>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <script>window.html5 || document.write('<script src="js/vendor/html5shiv.js"><\/script>')</script>
+    <![endif]-->
+</head>
+<body>
+<img src="img/menusifu.jpg" width="120px" height="30px">
+<div class="container">
+
+    <seciton id="section1" class="row">
+        <label class="text-danger">设置小费比例:</label>
+        <div id="div1" style="display: inline-block;">
+            <select class="set-tip-rate form-control" multiple="multiple" style="min-width: 400px;">
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="15">15</option>
+                <option value="20">20</option>
+            </select>
+            <button type="button" class="btn btn-success">生成建议小费按钮</button>
+        </div>
+    </seciton>
+
+    <section id="section2" class="row">
+        <label class="text-danger">建议小费:</label>
+        <div id="div2"></div>
+    </section>
+
+    <section id="section3" class="row">
+        <label class="text-danger">初始价格:</label>
+        <div id="div3">
+            <input type="text" placeholder="初始价格" id="initialPrice"/>
+            <label class="text-danger"></label>
+        </div>
+    </section>
+
+    <section id="section4" class="row">
+        <label class="text-danger">总计:</label>
+        <div id="div4">
+            <ul>
+                <li data-price="$">初始价格: <span></span></li>
+                <li data-tip="$">小费价格: <span></span></li>
+                <li data-total="$">最终总价: <span></span></li>
+            </ul>
+        </div>
+    </section>
+    <hr>
+    <footer class="row">
+        <p>&copy; Menusifu 2017</p>
+    </footer>
+</div>
+
+</div> <!-- /container -->
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+<script>window.jQuery || document.write('<script src="js/vendor/jquery-1.11.2.min.js"><\/script>')</script>
+
+<script src="js/vendor/bootstrap.min.js"></script>
+<script type="text/javascript" src="libs/select2-4.0.3/dist/js/select2.full.min.js"></script>
+<!--<script src="js/main.js"></script>-->
+<script>
+    $(document).ready(function () {
+
+        $(".set-tip-rate").select2({
+            tags: true,
+            allowClear: true,
+            tokenSeparators: [',', ' ', '\t', ' ']
+        });
+
+        $('button').on('click', function (e) {
+
+            var rateRadio = '<input type="radio" name="tips" ';
+            var rateAry = $('div#div1 select').val();
+            var rateButtons = rateAry.map(function (r) {
+                return rateRadio + 'value="' + r + '" />' + r + "%";
+            });
+
+            $('div#div2').empty().append(rateButtons.join('\n'));
+            $('div#div4 ul>li>span').html('');
+
+            e.preventDefault();
+        });
+
+        $('div#div2').on('click', 'input:radio[name=tips]', function (e) {
+
+            $(this).prop('checked', true);
+
+            var ul = $('div#div4 ul');
+            ul.find('li span').html('');
+
+            var price = parseFloat($('input#initialPrice').val());
+
+            if (price) {
+                var rate = $(this).val();
+                var tip = rate * price / 100;
+                var total = price + tip;
+
+                $('li:first span', ul).append(getMoneyFormat(price));
+                $('li:nth-child(2) span', ul).append(getMoneyFormat(tip));
+                $('li:last span', ul).append(getMoneyFormat(total));
+            }
+        });
+
+        $('input#initialPrice').on('keyup', function (e) {
+
+            var valid = validate($(this).val());
+            if (!valid) {
+                $("label.text-danger").html('wrong input').fadeIn(100);
+                $('input#initialPrice').focus();
+                return false;
+            }
+            else {
+                $("label.text-danger").html('').fadeOut(100);
+            }
+
+            $('div#div4 ul>li>span').html('');
+            var checkedRadio = $('input:radio[name=tips]:checked');
+            if (checkedRadio.length) {
+                $(checkedRadio).trigger('click');
+            }
+        });
+
+        $("#div1")
+            .on("click", ".select2-selection__clear", function () {
+                $('button').prop('disabled', true);
+                $('div#div3, div#div4').hide();
+            })
+            .on("change", ".select2-selection__rendered", function () {
+                console.log($(this).length, $(".select2-selection__choice").length);
+            })
+
+    });
+
+    function getMoneyFormat(value) {
+        return '$' + value.toFixed(2).replace(/(\d)(?=(\d{3})+$)/g, "$1,");
+    }
+    function validate(money) {
+        var rgx = /^[0-9]*\.?[0-9]*$/;
+        return money.match(rgx);
+    }
+
+</script>
+</body>
+</html>

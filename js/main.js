@@ -3,21 +3,29 @@ $(document).ready(function () {
     $(".set-tip-rate").select2({
         tags: true,
         allowClear: true,
-        tokenSeparators: [',', ' ', '\t', ' ']
+        tokenSeparators: [',', ' ', '   ']
     });
 
     $('button').on('click', function (e) {
 
         var rateRadio = '<input type="radio" name="tips" ';
         var rateAry = $('div#div1 select').val();
-        var rateButtons = rateAry.map(function (r) {
+
+        var rateButtons = rateAry.filter(function (r) {
+            return validate(r) === true;
+        }).map(function (r) {
             return rateRadio + 'value="' + r + '" />' + r + "%";
         });
+        if (rateButtons.length != rateAry.length) {
+            $("label.text-warning").html('wrong input').fadeIn(100);
+        }
+        else {
+            $("label.text-warning").html('').fadeOut(100);
+        }
 
         $('div#div2').empty().append(rateButtons.join('\n'));
-        //$('input#initialPrice').focus();
-
         $('div#div4 ul>li>span').html('');
+
         e.preventDefault();
     });
 
@@ -28,33 +36,45 @@ $(document).ready(function () {
         var ul = $('div#div4 ul');
         ul.find('li span').html('');
 
-        var rate = $(this).val();
         var price = parseFloat($('input#initialPrice').val());
-        var tip = Math.round(rate * price * 100) / 100;
-        var total = (price + tip).toFixed(2);
 
-        $('li:first span', ul).append(price);
-        $('li:nth-child(2) span', ul).append(tip);
-        $('li:last span', ul).append(total);
+        if (price) {
+            var rate = $(this).val();
+            var tip = rate * price / 100;
+            var total = price + tip;
+
+            $('li:first span', ul).append(getMoneyFormat(price));
+            $('li:nth-child(2) span', ul).append(getMoneyFormat(tip));
+            $('li:last span', ul).append(getMoneyFormat(total));
+        }
     });
 
     $('input#initialPrice').on('keyup', function (e) {
-        var ul = $('div#div4 ul');
-        ul.find('li span').html('');
 
+        var valid = validate($(this).val());
+        if (!valid) {
+            $("label.text-danger").html('wrong input').fadeIn(100);
+            $('input#initialPrice').focus();
+            return false;
+        }
+        else {
+            $("label.text-danger").html('').fadeOut(100);
+        }
+
+        $('div#div4 ul>li>span').html('');
         var checkedRadio = $('input:radio[name=tips]:checked');
         if (checkedRadio.length) {
             $(checkedRadio).trigger('click');
         }
     });
 
-    $("#div1")
-        .on("click", ".select2-selection__clear", function () {
-            $('button').prop('disabled', true);
-            $('div#div3, div#div4').hide();
-        })
-        .on("change", ".select2-selection__rendered", function () {
-            console.log($(this).length, $(".select2-selection__choice").length);
-        })
-
 });
+
+function getMoneyFormat(value) {
+    return '$' + value.toFixed(2).replace(/(\d)(?=(\d{3})+$)/g, "$1,");
+}
+
+function validate(money) {
+    var rgx = /^[0-9]*\.?[0-9]*$/;
+    return rgx.test(money);
+}
